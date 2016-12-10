@@ -12,6 +12,7 @@ public class spawn_enemies : MonoBehaviour {
 	GameObject yellowPrefab;
 	float enemyHeight = 0.35f;
 	float enemyWidth = 0.35f;
+	float spawnMargin = 1f;
 
 	// Use this for initialization
 	void Start () {
@@ -45,8 +46,8 @@ public class spawn_enemies : MonoBehaviour {
 		Vector2 parallelVector = right.position - left.position;
 		parallelVector.Normalize ();
 //		print (parallelVector);
-		Vector2 leftExtreme = (Vector2)left.position + parallelVector * enemyWidth / 2f;
-		Vector2 rightExtreme = (Vector2)right.position - parallelVector * enemyWidth / 2f;
+		Vector2 leftExtreme = (Vector2)left.position + parallelVector * spawnMargin;
+		Vector2 rightExtreme = (Vector2)right.position - parallelVector * spawnMargin;
 		Vector2 spawnPoint = Vector2.Lerp (leftExtreme, rightExtreme, Random.Range (0f, 1f));
 		Vector2 perpendicularVector = new Vector2 (-parallelVector.y, parallelVector.x);
 //		print (perpendicularVector);

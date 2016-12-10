@@ -9,6 +9,10 @@ public class player_movement : MonoBehaviour {
 	float punchDecayTime = 0f;
 	float punchRadius = 0.5f;
 	float punchDistance = .725f;
+	float gravityForce = 100f;
+	float noGravityTimeMax = 0.5f;
+	float noGravityTime = 0f;
+	float downForce = 100f;
 //	float jumpMaxCooldown = .25f;
 //	float jumpCooldown = 0f;
 	int punchCounter = 0;
@@ -24,6 +28,7 @@ public class player_movement : MonoBehaviour {
 		levelRotator = GameObject.FindObjectOfType<level_rotate> ();
 //		StartCoroutine (manageJumpCooldown());
 		StartCoroutine (managePunchCounter());
+		StartCoroutine (manageNoGravity ());
 		recentPunch = new debugCircle (Vector2.zero, 0f);
 	}
 	
@@ -40,6 +45,9 @@ public class player_movement : MonoBehaviour {
 		} else if (leftInput && !rightInput) {
 			move (Direction.LEFT);
 		}
+		if (Input.GetKey (KeyCode.S)) {
+			rb.AddForce (new Vector2 (0f, -downForce));
+		}
 		bool leftClick = Input.GetMouseButtonDown (0);
 		bool rightClick = Input.GetMouseButtonDown (1);
 		if (rightClick && !leftClick) {
@@ -48,6 +56,7 @@ public class player_movement : MonoBehaviour {
 			punch (false);
 		}
 		drag ();
+		gravity ();
 //		print (punchCounter);
 	}
 
@@ -97,8 +106,22 @@ public class player_movement : MonoBehaviour {
 		} else {
 			punchPoint = (Vector2)transform.position + Vector2.left * punchDistance;
 		}
-		Physics2D.OverlapCircleAll (punchPoint, punchRadius);
+		Collider2D[] hits = Physics2D.OverlapCircleAll (punchPoint, punchRadius, 1 << 9);
 		recentPunch = new debugCircle (punchPoint, punchRadius);
+		foreach (Collider2D hit in hits) {
+			enemy_movement em = hit.GetComponent<enemy_movement> ();
+			if (em == null) {
+				continue;
+			}
+//			print (em.gameObject.nam);
+			em.takePunch(right, rb.velocity.y);
+		}
+//		print (hits.Length);
+		if (hits.Length > 0) {
+			rb.velocity = Vector2.zero;
+			doubleJumpReady = true;
+			noGravityTime = noGravityTimeMax;
+		}
 		if (punchCounter >= 4) {
 			if (right) {
 				levelRotator.rotateLevel (true);
@@ -106,6 +129,13 @@ public class player_movement : MonoBehaviour {
 				levelRotator.rotateLevel (false);
 			}
 			punchCounter = 0;
+		}
+	}
+
+	void gravity() {
+//		print (noGravityTime);
+		if (noGravityTime <= 0f) {
+			rb.AddForce (new Vector2 (0f, -gravityForce));
 		}
 	}
 
@@ -135,6 +165,15 @@ public class player_movement : MonoBehaviour {
 			if (punchDecayTime <= 0f && punchCounter > 0) {
 				punchCounter--;
 				punchDecayTime = punchDecayTimeMax;
+			}
+			yield return new WaitForEndOfFrame ();
+		}
+	}
+
+	IEnumerator manageNoGravity() {
+		while (true) {
+			if (noGravityTime > 0f) {
+				noGravityTime -= Time.deltaTime;
 			}
 			yield return new WaitForEndOfFrame ();
 		}
