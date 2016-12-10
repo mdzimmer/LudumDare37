@@ -2,25 +2,34 @@
 using System.Collections;
 
 public class player_movement : MonoBehaviour {
-	float jumpImpulse = 30f;
+	float jumpImpulse = 50f;
 	float moveForce = 200f;
 	float linearDrag = 20f;
+	float punchDecayTimeMax = .5f;
+	float punchDecayTime = 0f;
+	float punchRadius = 0.5f;
+	float punchDistance = .725f;
 //	float jumpMaxCooldown = .25f;
 //	float jumpCooldown = 0f;
+	int punchCounter = 0;
 	bool doubleJumpReady = true;
 	bool onGround = true;
 	Rigidbody2D rb;
+	level_rotate levelRotator;
+	debugCircle recentPunch;
 
 	// Use this for initialization
 	void Start () {
 		rb = GetComponent<Rigidbody2D> ();
+		levelRotator = GameObject.FindObjectOfType<level_rotate> ();
 //		StartCoroutine (manageJumpCooldown());
+		StartCoroutine (managePunchCounter());
+		recentPunch = new debugCircle (Vector2.zero, 0f);
 	}
 	
 	// Update is called once per frame
 	void Update () {
 		testOnGround ();
-		//input
 		if (Input.GetKeyDown (KeyCode.W)) {
 			jump ();
 		}
@@ -31,7 +40,20 @@ public class player_movement : MonoBehaviour {
 		} else if (leftInput && !rightInput) {
 			move (Direction.LEFT);
 		}
+		bool leftClick = Input.GetMouseButtonDown (0);
+		bool rightClick = Input.GetMouseButtonDown (1);
+		if (rightClick && !leftClick) {
+			punch (true);
+		} else if (leftClick && !rightClick) {
+			punch (false);
+		}
 		drag ();
+//		print (punchCounter);
+	}
+
+	void OnDrawGizmos() {
+		Gizmos.color = Color.green;
+		Gizmos.DrawSphere (recentPunch.position, recentPunch.radius);
 	}
 
 	void testOnGround() {
@@ -66,11 +88,36 @@ public class player_movement : MonoBehaviour {
 		rb.AddForce (appliedForce);
 	}
 
+	void punch(bool right) {
+		punchCounter++;
+		punchDecayTime = punchDecayTimeMax;
+		Vector2 punchPoint = Vector2.zero;
+		if (right) {
+			punchPoint = (Vector2)transform.position + Vector2.right * punchDistance;
+		} else {
+			punchPoint = (Vector2)transform.position + Vector2.left * punchDistance;
+		}
+		Physics2D.OverlapCircleAll (punchPoint, punchRadius);
+		recentPunch = new debugCircle (punchPoint, punchRadius);
+		if (punchCounter >= 4) {
+			if (right) {
+				levelRotator.rotateLevel (true);
+			} else {
+				levelRotator.rotateLevel (false);
+			}
+			punchCounter = 0;
+		}
+	}
+
 	void drag() {
 		Vector2 appliedDrag = rb.velocity * -linearDrag;
 		appliedDrag.y = 0f;
 		rb.AddForce (appliedDrag);
 	}
+
+//	void drawDebugCircle() {
+//
+//	}
 
 //	IEnumerator manageJumpCooldown() {
 //		while (true) {
@@ -81,8 +128,30 @@ public class player_movement : MonoBehaviour {
 //		}
 //	}
 
+	IEnumerator managePunchCounter() {
+//		float decay = punchDecayTime;
+		while (true) {
+			punchDecayTime -= Time.deltaTime;
+			if (punchDecayTime <= 0f && punchCounter > 0) {
+				punchCounter--;
+				punchDecayTime = punchDecayTimeMax;
+			}
+			yield return new WaitForEndOfFrame ();
+		}
+	}
+
 	enum Direction {
 		RIGHT,
 		LEFT
+	}
+
+	struct debugCircle {
+		public Vector2 position;
+		public float radius;
+
+		public debugCircle(Vector2 _position, float _radius) {
+			position = _position;
+			radius = _radius;
+		}
 	}
 }

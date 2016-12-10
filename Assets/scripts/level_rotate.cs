@@ -21,7 +21,7 @@ public class level_rotate : MonoBehaviour {
 		}
 	}
 
-	void rotateLevel(bool clockwise) {
+	public void rotateLevel(bool clockwise) {
 		if (!rotating) {
 			StartCoroutine (manageRotateLevel(clockwise));
 		}
