@@ -22,16 +22,30 @@ public class enemy_movement : MonoBehaviour {
 	float comboUpEffectRate = .5f;
 	float checkAheadLength = 1.5f;
 	float linearDrag = 5f;
+	float timeToAttack = 0f;
+	float minTimeToAttack = 2f;
+	float maxTimeToAttack = 6f;
+	float attackLength = 1f;
+	float attackRadius = 0.5f;
+	float groundDetectionLength = 0.6f;
+	float minVictoryTime = 0.25f;
+	float maxVictoryTime = 2f;
+	float entranceTurnRate = 75f;
 	bool moveRight = true;
 	bool onGround = false;
 	bool recentPunchRight = true;
 	bool tumbling = false;
 	bool dead = false;
+	bool entered = false;
 	int punchesTaken = 0;
 	Vector2 comboPosition;
 	Vector3 startScale;
 //	Vector2 upVector;
 	Rigidbody2D rb;
+	Animator animator;
+	GameObject particleSystemPrefab;
+	soundManager sm;
+	level_rotate lr;
 
 	// Use this for initialization
 	void Start () {
@@ -39,26 +53,47 @@ public class enemy_movement : MonoBehaviour {
 		moveRight = (Random.Range (0f, 1f) < 0.5f) ? true : false;
 		startRotation = transform.rotation.eulerAngles.z;
 		startScale = transform.localScale;
+		animator = GetComponent<Animator> ();
+		GameObject particleSystemPrefab = (GameObject)Resources.Load ("prefabs/HitParticles");
+		sm = GameObject.FindObjectOfType<soundManager> ();
+		lr = GameObject.FindObjectOfType<level_rotate> ();
+//		print (particleSystemPrefab);
 //		upVector = transform.up;
-		StartCoroutine (manageJumpDecision());
-		StartCoroutine (manageDirectionDecision ());
-		StartCoroutine (manageTakingPunches ());
+//		Vector3 newRotation = transform.localRotation.eulerAngles;
+//		newRotation.y = 90f;
+//		transform.localRotation = Quaternion.Euler (newRotation);
+		StartCoroutine (manageEntrance());
+//		StartCoroutine (manageTakingPunches ());
+//		StartCoroutine (manageDirectionDecision ());
+//		StartCoroutine (manageJumpDecision());
+//		StartCoroutine (manageAttackDecision ());
 	}
 	
 	// Update is called once per frame
 	void Update () {
 		applyGravity ();
-		onGround = Physics2D.Raycast (transform.position, -transform.up, 0.4f, 1 << 8);
-		if (punchesTaken == 0 && !tumbling && !dead) {
+		onGround = Physics2D.Raycast (transform.position, -transform.up, groundDetectionLength, 1 << 8);
+		Debug.DrawLine (transform.position, transform.position + -transform.up * groundDetectionLength);
+		if (punchesTaken == 0 && !tumbling && !dead && entered) {
 			drag ();
 			move ();
 			face ();
 		}
 //		rb.add
+
+//		if (type == wall.Type.BLACK || type == wall.Type.WHITE) {
+//			Vector3 newRotation = transform.localRotation.eulerAngles;
+//			newRotation.y += Time.deltaTime * 50f;
+//			transform.localRotation = Quaternion.Euler (newRotation);
+//		} else {
+//			Vector3 newRotation = transform.localRotation.eulerAngles;
+//			newRotation.x += Time.deltaTime * 50f;
+//			transform.localRotation = Quaternion.Euler (newRotation);
+//		}
 	}
 
 	public void takePunch(bool isRight, float upForce = -1f) {
-		if (!dead) {
+		if (!dead && entered) {
 			rb.velocity = Vector2.zero;
 			punchesTaken++;
 			breakLockTime = breakLockMaxTime;
@@ -70,21 +105,58 @@ public class enemy_movement : MonoBehaviour {
 		}
 	}
 
+	public void attackTrigger() {
+		Vector2 targetDir = Vector2.zero;
+		if (moveRight) {
+			targetDir = transform.right;
+		} else {
+			targetDir = -transform.right;
+		}
+		Collider2D[] hits = Physics2D.OverlapCircleAll ((Vector2)transform.position + targetDir * attackLength, attackRadius);
+		foreach (Collider2D hit in hits) {
+			player_movement playerMovement = hit.GetComponent<player_movement> ();
+			if (playerMovement) {
+				playerMovement.takeHit (chooseTint());
+			}
+		}
+	}
+
+	public void victoryDie() {
+		StartCoroutine (manageVictoryDie ());
+	}
+
+	particleColor.Tint chooseTint() {
+		switch (type) {
+		case wall.Type.BLACK:
+			return particleColor.Tint.BLACK;
+		case wall.Type.YELLOW:
+			return particleColor.Tint.YELLOW;
+		case wall.Type.WHITE:
+			return particleColor.Tint.WHITE;
+		case wall.Type.RED:
+			return particleColor.Tint.RED;
+		}
+		return particleColor.Tint.BLACK;
+	}
+
 	void applyGravity() {
+//		print (punchesTaken + " : " + dead);
 //		print (transform.up);
 //		rb.AddForce (transform.up * -gravityForce);
-		if (punchesTaken <= 0 && !tumbling && !dead) {
+		if (punchesTaken <= 0 && !dead && !tumbling) {
+//			print (Time.frameCount);
 			rb.AddRelativeForce (new Vector2 (0f, -gravityForce));
 //			rb.AddForce(new Vector2(0f, -upVector.y * gravityForce));
 //			print (Time.frameCount);
 		} else if (tumbling && !dead) {
-			rb.AddForce(new Vector2(0f, -gravityForce));
+			rb.AddForce(-Vector2.up * gravityForce);
 		}
 	}
 
 	void jump() {
 //		rb.AddForce (transform.up * Random.Range(minJumpForce, maxJumpForce), ForceMode2D.Impulse);
 		rb.AddRelativeForce(new Vector2(0f, Random.Range(minJumpForce, maxJumpForce)), ForceMode2D.Impulse);
+//		sm.playEnemyJump ();
 	}
 
 	void drag() {
@@ -119,10 +191,11 @@ public class enemy_movement : MonoBehaviour {
 //			}
 //		}
 		wall _wall = col.collider.GetComponent<wall> ();
-		if (_wall != null && _wall.type != type) {
+		if (_wall != null && _wall.type != type && !dead) {
 			die ();
 		} else {
 			tumbling = false;
+			animator.Play ("walk");
 		}
 	}
 
@@ -130,8 +203,28 @@ public class enemy_movement : MonoBehaviour {
 		dead = true;
 		StopCoroutine(manageTumbling());
 		rb.velocity = Vector2.zero;
+		Vector3 particlePosition = transform.position;
+		particlePosition.z = -1f;
+//		print (particleSystemPrefab);
+		if (particleSystemPrefab == null) {
+			particleSystemPrefab = (GameObject)Resources.Load ("prefabs/HitParticles");
+		}
+		GameObject psgo = (GameObject)Instantiate(particleSystemPrefab, particlePosition, Quaternion.identity);
+		psgo.GetComponent<particleColor> ().setTint (chooseTint());
+		sm.playEnemyDie ();
 //		Destroy (rb);
+		lr.recordProgress(type);
 		Destroy (gameObject, deathDelay);
+	}
+
+//	level_rotate.State chooseKind() {
+//		switch (type) {
+//
+//		}
+//	}
+
+	void attack() {
+		animator.Play ("attack");
 	}
 
 	IEnumerator manageJumpDecision() {
@@ -186,12 +279,14 @@ public class enemy_movement : MonoBehaviour {
 				StopCoroutine (manageTakingPunches ());
 			}
 			if (punchesTaken > 0) {
+				animator.Play ("hit");
 				transform.position = comboPosition;
 				breakLockTime -= Time.deltaTime;
-				if (breakLockTime <= 0f) {
-//					print (gameObject.name + " : " + breakForce * punchesTaken * (recentPunchRight ? 1f : -1f));
+//				if (breakLockTime <= 0f) {
+				if (breakLockTime <= 0f || punchesTaken >= 4) {
+////					print (gameObject.name + " : " + breakForce * punchesTaken * (recentPunchRight ? 1f : -1f));
 					rb.AddForce (new Vector2 (breakForce * punchesTaken * (recentPunchRight ? 1f : -1f),
-						comboUpForce * punchesTaken * comboUpEffectRate),
+						Mathf.Max(comboUpForce * punchesTaken * comboUpEffectRate, minimumComboUpForce)),
 						ForceMode2D.Impulse);
 					punchesTaken = 0;
 					tumbling = true;
@@ -210,5 +305,55 @@ public class enemy_movement : MonoBehaviour {
 			yield return new WaitForEndOfFrame ();
 		}
 		transform.rotation = Quaternion.Euler (new Vector3(0f, 0f, startRotation));
+	}
+
+	IEnumerator manageAttackDecision() {
+		timeToAttack = Random.Range (minTimeToAttack, maxTimeToAttack);
+		while (true) {
+			if (!dead && !tumbling) {
+				timeToAttack -= Time.deltaTime;
+				if (timeToAttack <= 0f) {
+					attack ();
+					timeToAttack = Random.Range (minTimeToAttack, maxTimeToAttack);
+				}
+			}
+			yield return new WaitForEndOfFrame ();
+		}
+	}
+
+	IEnumerator manageVictoryDie() {
+		float time = Random.Range (minVictoryTime, maxVictoryTime);
+		yield return new WaitForSeconds (time);
+		die ();
+	}
+
+	IEnumerator manageEntrance() {
+		float angle = 90f;
+//		Vector3 newRotation = transform.localRotation.eulerAngles;
+//		if (type == wall.Type.BLACK || type == wall.Type.WHITE) {
+//			newRotation.y = angle;
+//		} else {
+//			newRotation.x = angle;
+//		}
+//		transform.localRotation = Quaternion.Euler (newRotation);
+		while (angle > 0f) {
+			angle -= Time.deltaTime * entranceTurnRate;
+			if (angle < 0f) {
+				angle = 0f;
+			}
+			Vector3 newRotation = transform.localRotation.eulerAngles;
+			if (type == wall.Type.BLACK || type == wall.Type.WHITE) {
+				newRotation.y = angle;
+			} else {
+				newRotation.x = angle;
+			}
+			transform.localRotation = Quaternion.Euler (newRotation);
+			yield return new WaitForEndOfFrame();
+		}
+		entered = true;
+		StartCoroutine (manageTakingPunches ());
+		StartCoroutine (manageDirectionDecision ());
+		StartCoroutine (manageJumpDecision());
+		StartCoroutine (manageAttackDecision ());
 	}
 }

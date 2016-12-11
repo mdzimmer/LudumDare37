@@ -29,6 +29,7 @@ public class rotate_indicator : MonoBehaviour {
 	}
 
 	public void incrementIndicator(bool _clockwise) {
+//		return;
 		decayTime = decayTimeMax;
 		switch (state) {
 		case State.ZERO:
@@ -62,7 +63,7 @@ public class rotate_indicator : MonoBehaviour {
 	}
 
 	void setState(State _state) {
-		print (_state + " : " + clockwise);
+//		print (_state + " : " + clockwise);
 		switch (_state) {
 		case State.ZERO:
 			disable (black);
@@ -291,30 +292,30 @@ public class rotate_indicator : MonoBehaviour {
 			switch (levelRotate.state) {
 			case level_rotate.State.BLACK:
 				if (clockwise) {
-					return red;
-				} else {
 					return yellow;
+				} else {
+					return red;
 				}
 				break;
 			case level_rotate.State.YELLOW:
 				if (clockwise) {
-					return black;
-				} else {
 					return white;
+				} else {
+					return black;
 				}
 				break;
 			case level_rotate.State.WHITE:
 				if (clockwise) {
-					return yellow;
-				} else {
 					return red;
+				} else {
+					return yellow;
 				}
 				break;
 			case level_rotate.State.RED:
 				if (clockwise) {
-					return white;
-				} else {
 					return black;
+				} else {
+					return white;
 				}
 				break;
 			}
@@ -326,9 +327,9 @@ public class rotate_indicator : MonoBehaviour {
 			case level_rotate.State.YELLOW:
 				return yellow;
 			case level_rotate.State.WHITE:
-				return black;
+				return white;
 			case level_rotate.State.RED:
-				return yellow;
+				return red;
 			}
 			break;
 		case State.FOUR:

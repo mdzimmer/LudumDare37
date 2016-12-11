@@ -2,6 +2,9 @@
 using System.Collections;
 
 public class player_movement : MonoBehaviour {
+	public GameObject particleSystemPrefab;
+	public bool invincible = false;
+
 	float jumpImpulse = 50f;
 	float moveForce = 200f;
 	float linearDrag = 20f;
@@ -21,6 +24,7 @@ public class player_movement : MonoBehaviour {
 //	float jumpMaxCooldown = .25f;
 //	float jumpCooldown = 0f;
 //	int punchCounter = 0;
+	int lives = 4;
 	bool doubleJumpReady = true;
 	bool onGround = true;
 	bool doingCombo = false;
@@ -31,6 +35,8 @@ public class player_movement : MonoBehaviour {
 	debugCircle recentPunch;
 	State state = State.OTHER;
 	Animator animator;
+	LivesCount livesCount;
+	soundManager sm;
 
 	// Use this for initialization
 	void Start () {
@@ -46,6 +52,10 @@ public class player_movement : MonoBehaviour {
 		startScale = transform.localScale;
 		animator = GetComponent<Animator> ();
 		rotateIndicator = GameObject.FindObjectOfType<rotate_indicator> ();
+		livesCount = GameObject.FindObjectOfType<LivesCount> ();
+		sm = GameObject.FindObjectOfType<soundManager> ();
+//		GameObject particleSystemPrefab = (GameObject)Resources.Load ("prefabs/HitParticles");
+//		print (particleSystemPrefab);
 	}
 	
 	// Update is called once per frame
@@ -82,6 +92,23 @@ public class player_movement : MonoBehaviour {
 //		print (punchCounter);
 	}
 
+	public void takeHit(particleColor.Tint tint) {
+		if (invincible) {
+			return;
+		}
+		Vector3 particlePoint = transform.position;
+		particlePoint.z = -1f;
+		GameObject psgo = (GameObject)Instantiate(particleSystemPrefab, particlePoint, Quaternion.identity);
+		psgo.GetComponent<particleColor> ().setTint (tint);
+		sm.playPlayerDamage ();
+		lives--;
+		livesCount.showNumber (lives);
+//		print (lives);
+		if (lives <= 0) {
+			die ();
+		}
+	}
+
 	void OnDrawGizmos() {
 		Gizmos.color = Color.green;
 		Gizmos.DrawSphere (recentPunch.position, recentPunch.radius);
@@ -114,6 +141,7 @@ public class player_movement : MonoBehaviour {
 			if (!onGround) {
 				doubleJumpReady = false;
 			}
+			sm.playJump ();
 		}
 	}
 
@@ -158,6 +186,14 @@ public class player_movement : MonoBehaviour {
 			doubleJumpReady = true;
 			comboTime = comboTimeMax;
 //			StartCoroutine (manageCombo ());
+//			print(particleSystemPrefab);
+			Vector3 particlePoint = punchPoint;
+			particlePoint.z = -1f;
+			GameObject psgo = (GameObject)Instantiate (particleSystemPrefab, particlePoint, Quaternion.identity);
+			psgo.GetComponent<particleColor> ().setTint (particleColor.Tint.GREEN);
+			sm.playPlayerAttackHit ();
+		} else {
+			sm.slash.Play ();
 		}
 		setState (progressAttack ());
 		attackReturnTime = attackReturnTimeMax;
@@ -173,6 +209,7 @@ public class player_movement : MonoBehaviour {
 
 	void gravity() {
 //		print (noGravityTime);
+//		print(comboTime);
 		if (comboTime <= 0f) {
 			rb.AddForce (new Vector2 (0f, -gravityForce));
 		}
@@ -186,6 +223,11 @@ public class player_movement : MonoBehaviour {
 
 	void setState(State _state) {
 		state = _state;
+	}
+
+	void die() {
+		levelRotator.endLevel ();
+		Destroy (gameObject);
 	}
 
 	State progressAttack() {
@@ -279,9 +321,11 @@ public class player_movement : MonoBehaviour {
 //		for (float comboTime = comboTimeMax; comboTime > 0f; comboTime -= Time.deltaTime) {
 //			yield return new WaitForEndOfFrame ();
 //		}
-		while (comboTime > 0f) {
+		while (true) {
 //			doingCombo = true;
-			comboTime -= Time.deltaTime;
+			if (comboTime > 0f) {
+				comboTime -= Time.deltaTime;
+			}
 			yield return new WaitForEndOfFrame ();
 		}
 //		doingCombo = false;

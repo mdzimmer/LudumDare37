@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class spawn_enemies : MonoBehaviour {
 	public bool spawnEnabled = false;
@@ -12,10 +13,14 @@ public class spawn_enemies : MonoBehaviour {
 	GameObject whitePrefab;
 	GameObject blackPrefab;
 	GameObject yellowPrefab;
+	level_rotate lr;
 	float enemyHeight = 0.35f;
 	float enemyWidth = 0.35f;
 	float spawnMargin = 1f;
 	float currentSpawnInterval = 0.5f;
+	float minSpawnInterval = 0.1f;
+	float multiplierInterval = 5f;
+	int maxEnemies = 40;
 
 	// Use this for initialization
 	void Start () {
@@ -27,6 +32,7 @@ public class spawn_enemies : MonoBehaviour {
 		whitePrefab = (GameObject)Resources.Load ("prefabs/whiteEnemy");
 		blackPrefab = (GameObject)Resources.Load ("prefabs/blackEnemy");
 		yellowPrefab = (GameObject)Resources.Load ("prefabs/yellowEnemy");
+		lr = GameObject.FindObjectOfType<level_rotate> ();
 		StartCoroutine (manageSpawning ());
 	}
 	
@@ -62,16 +68,53 @@ public class spawn_enemies : MonoBehaviour {
 		enemyGO.transform.localRotation = Quaternion.Euler (new Vector3(0f, 0f, rotation));
 	}
 
+	int determineType() {
+		List<int> available = new List<int> ();
+		if (lr.blackProgress < lr.goal) {
+			available.Add (2);
+		}
+		if (lr.yellowProgress < lr.goal) {
+			available.Add (1);
+		}
+		if (lr.whiteProgress < lr.goal) {
+			available.Add (0);
+		}
+		if (lr.redProgress < lr.goal) {
+			available.Add (3);
+		}
+		if (available.Count == 0) {
+			return -1;
+		}
+		return available [Random.Range (0, available.Count)];
+	}
+
 	IEnumerator manageSpawning() {
 		float spawnTimeRemaining = currentSpawnInterval;
+		float multiplierTime = 0f;
 		while (true) {
 			if (!spawnEnabled) {
 				yield return new WaitForEndOfFrame ();
 				continue;
 			}
+			multiplierTime += Time.deltaTime;
+			if (multiplierTime >= multiplierInterval) {
+				currentSpawnInterval /= 2f;
+				currentSpawnInterval = Mathf.Max (currentSpawnInterval, minSpawnInterval);
+				multiplierTime = 0f;
+			}
 			spawnTimeRemaining -= Time.deltaTime;
 			if (spawnTimeRemaining <= 0f) {
-				int enemyType = Random.Range (0, 4);
+				enemy_movement[] enemyList = GameObject.FindObjectsOfType<enemy_movement> ();
+				if (enemyList.Length >= maxEnemies) {
+					spawnTimeRemaining = currentSpawnInterval;
+					continue;
+				}
+//				int enemyType = Random.Range (0, 4);
+				int enemyType = determineType();
+				if (enemyType == -1) {
+					spawnEnabled = false;
+					break;
+				}
 				switch (enemyType) {
 				case 0:
 					spawn (one_two, four_one, whitePrefab, 180f);
