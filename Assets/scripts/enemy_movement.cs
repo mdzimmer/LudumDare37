@@ -5,7 +5,7 @@ public class enemy_movement : MonoBehaviour {
 	public wall.Type type;
 
 	float gravityForce = 100f;
-	float moveForce = 15f;
+	float moveForce = 5f;
 	float maxTimeToJump = 1f;
 	float minJumpForce = 30f;
 	float maxJumpForce = 60f;
@@ -28,6 +28,8 @@ public class enemy_movement : MonoBehaviour {
 	bool tumbling = false;
 	bool dead = false;
 	int punchesTaken = 0;
+	Vector2 comboPosition;
+	Vector3 startScale;
 //	Vector2 upVector;
 	Rigidbody2D rb;
 
@@ -36,6 +38,7 @@ public class enemy_movement : MonoBehaviour {
 		rb = GetComponent<Rigidbody2D> ();
 		moveRight = (Random.Range (0f, 1f) < 0.5f) ? true : false;
 		startRotation = transform.rotation.eulerAngles.z;
+		startScale = transform.localScale;
 //		upVector = transform.up;
 		StartCoroutine (manageJumpDecision());
 		StartCoroutine (manageDirectionDecision ());
@@ -49,17 +52,21 @@ public class enemy_movement : MonoBehaviour {
 		if (punchesTaken == 0 && !tumbling && !dead) {
 			drag ();
 			move ();
+			face ();
 		}
 //		rb.add
 	}
 
 	public void takePunch(bool isRight, float upForce = -1f) {
-		rb.velocity = Vector2.zero;
-		punchesTaken++;
-		breakLockTime = breakLockMaxTime;
-		recentPunchRight = isRight;
-		if (upForce > minimumComboUpForce) {
-			comboUpForce = upForce;
+		if (!dead) {
+			rb.velocity = Vector2.zero;
+			punchesTaken++;
+			breakLockTime = breakLockMaxTime;
+			recentPunchRight = isRight;
+			comboPosition = transform.position;
+			if (upForce > minimumComboUpForce) {
+				comboUpForce = upForce;
+			}
 		}
 	}
 
@@ -82,11 +89,23 @@ public class enemy_movement : MonoBehaviour {
 
 	void drag() {
 //		print (transform.InverseTransformDirection(rb.velocity).x);
-		rb.AddRelativeForce (new Vector2(-transform.InverseTransformDirection(rb.velocity).x * linearDrag, 0f));
+		rb.AddRelativeForce (new Vector2(
+			-transform.InverseTransformDirection(rb.velocity).x * linearDrag * (moveRight ? 1f : -1f), 0f));
 	}
 
 	void move() {
 		rb.AddRelativeForce (new Vector2 (moveForce * (moveRight ? 1f : -1f), 0f));
+//		rb.AddRelativeForce (new Vector2 (moveForce, 0f));
+	}
+
+	void face() {
+		Vector3 scale = startScale;
+		if (moveRight) {
+			scale.x = scale.x;
+		} else {
+			scale.x = -scale.x;
+		}
+		transform.localScale = scale;
 	}
 
 	void OnCollisionEnter2D(Collision2D col) {
@@ -111,7 +130,7 @@ public class enemy_movement : MonoBehaviour {
 		dead = true;
 		StopCoroutine(manageTumbling());
 		rb.velocity = Vector2.zero;
-		Destroy (rb);
+//		Destroy (rb);
 		Destroy (gameObject, deathDelay);
 	}
 
@@ -163,7 +182,11 @@ public class enemy_movement : MonoBehaviour {
 	IEnumerator manageTakingPunches() {
 		breakLockTime = breakLockMaxTime;
 		while (true) {
+			if (dead) {
+				StopCoroutine (manageTakingPunches ());
+			}
 			if (punchesTaken > 0) {
+				transform.position = comboPosition;
 				breakLockTime -= Time.deltaTime;
 				if (breakLockTime <= 0f) {
 //					print (gameObject.name + " : " + breakForce * punchesTaken * (recentPunchRight ? 1f : -1f));

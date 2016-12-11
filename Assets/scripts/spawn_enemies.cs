@@ -2,6 +2,8 @@
 using System.Collections;
 
 public class spawn_enemies : MonoBehaviour {
+	public bool spawnEnabled = false;
+
 	Transform one_two;
 	Transform two_three;
 	Transform three_four;
@@ -13,6 +15,7 @@ public class spawn_enemies : MonoBehaviour {
 	float enemyHeight = 0.35f;
 	float enemyWidth = 0.35f;
 	float spawnMargin = 1f;
+	float currentSpawnInterval = 0.5f;
 
 	// Use this for initialization
 	void Start () {
@@ -24,6 +27,7 @@ public class spawn_enemies : MonoBehaviour {
 		whitePrefab = (GameObject)Resources.Load ("prefabs/whiteEnemy");
 		blackPrefab = (GameObject)Resources.Load ("prefabs/blackEnemy");
 		yellowPrefab = (GameObject)Resources.Load ("prefabs/yellowEnemy");
+		StartCoroutine (manageSpawning ());
 	}
 	
 	// Update is called once per frame
@@ -56,5 +60,35 @@ public class spawn_enemies : MonoBehaviour {
 		GameObject enemyGO = (GameObject)Instantiate(prefab, spawnPoint, Quaternion.identity);
 		enemyGO.transform.parent = transform;
 		enemyGO.transform.localRotation = Quaternion.Euler (new Vector3(0f, 0f, rotation));
+	}
+
+	IEnumerator manageSpawning() {
+		float spawnTimeRemaining = currentSpawnInterval;
+		while (true) {
+			if (!spawnEnabled) {
+				yield return new WaitForEndOfFrame ();
+				continue;
+			}
+			spawnTimeRemaining -= Time.deltaTime;
+			if (spawnTimeRemaining <= 0f) {
+				int enemyType = Random.Range (0, 4);
+				switch (enemyType) {
+				case 0:
+					spawn (one_two, four_one, whitePrefab, 180f);
+					break;
+				case 1:
+					spawn (two_three, one_two, yellowPrefab, 90f);
+					break;
+				case 2:
+					spawn (three_four, two_three, blackPrefab, 0f);
+					break;
+				case 3:
+					spawn (four_one, three_four, redPrefab, 270f);
+					break;
+				}
+				spawnTimeRemaining = currentSpawnInterval;
+			}
+			yield return new WaitForEndOfFrame ();
+		}
 	}
 }

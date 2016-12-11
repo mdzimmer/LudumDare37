@@ -2,6 +2,8 @@
 using System.Collections;
 
 public class level_rotate : MonoBehaviour {
+	public State state = State.BLACK;
+
 	bool rotating = false;
 //	bool rotateClockwise = true;
 	float rotateRate = 100f;
@@ -24,6 +26,40 @@ public class level_rotate : MonoBehaviour {
 	public void rotateLevel(bool clockwise) {
 		if (!rotating) {
 			StartCoroutine (manageRotateLevel(clockwise));
+			changeState (clockwise);
+		}
+	}
+
+	void changeState (bool clockwise) {
+		switch (state) {
+		case State.BLACK:
+			if (clockwise) {
+				state = State.YELLOW;
+			} else {
+				state = State.RED;
+			}
+			break;
+		case State.YELLOW:
+			if (clockwise) {
+				state = State.WHITE;
+			} else {
+				state = State.BLACK;
+			}
+			break;
+		case State.WHITE:
+			if (clockwise) {
+				state = State.RED;
+			} else {
+				state = State.YELLOW;
+			}
+			break;
+		case State.RED:
+			if (clockwise) {
+				state = State.BLACK;
+			} else {
+				state = State.WHITE;
+			}
+			break;
 		}
 	}
 
@@ -39,5 +75,12 @@ public class level_rotate : MonoBehaviour {
 			yield return new WaitForEndOfFrame ();
 		}
 		rotating = false;
+	}
+
+	public enum State {
+		BLACK,
+		YELLOW,
+		WHITE,
+		RED
 	}
 }
