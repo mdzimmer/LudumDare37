@@ -21,6 +21,7 @@ public class player_movement : MonoBehaviour {
 	float groundTestLength = 0.6f;
 	float attackReturnTimeMax = 0.5f;
 	float attackReturnTime = 0f;
+	float entranceTurnRate = 50f;
 //	float jumpMaxCooldown = .25f;
 //	float jumpCooldown = 0f;
 //	int punchCounter = 0;
@@ -28,6 +29,7 @@ public class player_movement : MonoBehaviour {
 	bool doubleJumpReady = true;
 	bool onGround = true;
 	bool doingCombo = false;
+	bool entered = false;
 	Vector3 startScale;
 	Rigidbody2D rb;
 	level_rotate levelRotator;
@@ -45,6 +47,7 @@ public class player_movement : MonoBehaviour {
 //		StartCoroutine (manageJumpCooldown());
 //		StartCoroutine (managePunchCounter());
 //		StartCoroutine (manageNoGravity ());
+		StartCoroutine (manageEntrance());
 		StartCoroutine (manageAnim ());
 		StartCoroutine (manageState ());
 		StartCoroutine (manageCombo ());
@@ -60,6 +63,9 @@ public class player_movement : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
+		if (!entered) { 
+			return;
+		}
 		testOnGround ();
 		if (Input.GetKeyDown (KeyCode.W)) {
 			jump ();
@@ -329,6 +335,21 @@ public class player_movement : MonoBehaviour {
 			yield return new WaitForEndOfFrame ();
 		}
 //		doingCombo = false;
+	}
+
+	IEnumerator manageEntrance() {
+		float angle = 90f;
+		while (angle > 0f) {
+			angle -= Time.deltaTime * entranceTurnRate;
+			if (angle < 0f) {
+				angle = 0f;
+			}
+			Vector3 newRotation = transform.localRotation.eulerAngles;
+			newRotation.y = angle;
+			transform.localRotation = Quaternion.Euler (newRotation);
+			yield return new WaitForEndOfFrame ();
+		}
+		entered = true;
 	}
 
 	enum Direction {

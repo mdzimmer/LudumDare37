@@ -95,6 +95,7 @@ public class level_rotate : MonoBehaviour {
 				foreach (GameObject go in blackFloor) {
 					doProgress (go, 1f, blackFloorColor, clearFloorColor);
 				}
+				destroyByType (wall.Type.BLACK);
 			}
 			break;
 		case wall.Type.YELLOW:
@@ -105,6 +106,7 @@ public class level_rotate : MonoBehaviour {
 				foreach (GameObject go in yellowFloor) {
 					doProgress (go, 1f, yellowFloorColor, clearFloorColor);
 				}
+				destroyByType (wall.Type.YELLOW);
 			}
 			break;
 		case wall.Type.WHITE:
@@ -115,6 +117,7 @@ public class level_rotate : MonoBehaviour {
 				foreach (GameObject go in whiteFloor) {
 					doProgress (go, 1f, whiteFloorColor, clearFloorColor);
 				}
+				destroyByType (wall.Type.WHITE);
 			}
 			break;
 		case wall.Type.RED:
@@ -125,12 +128,37 @@ public class level_rotate : MonoBehaviour {
 				foreach (GameObject go in redFloor) {
 					doProgress (go, 1f, redFloorColor, clearFloorColor);
 				}
+				destroyByType (wall.Type.RED);
 			}
 			break;
 		}
 		if (blackProgress >= goal && yellowProgress >= goal && whiteProgress >= goal && redProgress >= goal) {
 			winGame ();
 		}
+	}
+
+	void destroyByType(wall.Type type) {
+		enemy_movement[] ofType = GameObject.FindObjectsOfType<enemy_movement> ();
+		foreach (enemy_movement em in ofType) {
+			if (em.type == type) {
+				em.victoryDie ();
+			}
+		}
+//		switch (type) {
+//		case wall.Type.BLACK:
+//			foreach (enemy_movement em in ofType) {
+//				if (em.type == type) {
+//					em.victoryDie ();
+//				}
+//			}
+//			break;
+//		case wall.Type.YELLOW:
+//			break;
+//		case wall.Type.WHITE:
+//			break;
+//		case wall.Type.RED:
+//			break;
+//		}
 	}
 
 	void doColor(GameObject go, Color color) {

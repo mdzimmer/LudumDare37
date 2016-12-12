@@ -20,6 +20,7 @@ public class spawn_enemies : MonoBehaviour {
 	float currentSpawnInterval = 0.5f;
 	float minSpawnInterval = 0.1f;
 	float multiplierInterval = 5f;
+	float initialWait = 3f;
 	int maxEnemies = 40;
 
 	// Use this for initialization
@@ -89,6 +90,7 @@ public class spawn_enemies : MonoBehaviour {
 	}
 
 	IEnumerator manageSpawning() {
+		yield return new WaitForSeconds (initialWait);
 		float spawnTimeRemaining = currentSpawnInterval;
 		float multiplierTime = 0f;
 		while (true) {
