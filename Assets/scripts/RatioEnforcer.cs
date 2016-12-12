@@ -10,7 +10,7 @@ public class RatioEnforcer : MonoBehaviour {
 //		print (cam.aspect);
 		cam.aspect = 1f;
 //		print (cam.aspect);
-		Screen.SetResolution(800, 800, false);
+		Screen.SetResolution(600, 600, false);
 	}
 	
 	// Update is called once per frame
