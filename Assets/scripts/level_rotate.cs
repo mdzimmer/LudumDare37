@@ -66,12 +66,12 @@ public class level_rotate : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		if (Input.GetKeyDown (KeyCode.K)) {
-			rotateLevel (false);
-		}
-		if (Input.GetKeyDown (KeyCode.L)) {
-			rotateLevel (true);
-		}
+//		if (Input.GetKeyDown (KeyCode.K)) {
+//			rotateLevel (false);
+//		}
+//		if (Input.GetKeyDown (KeyCode.L)) {
+//			rotateLevel (true);
+//		}
 	}
 
 	public void rotateLevel(bool clockwise) {

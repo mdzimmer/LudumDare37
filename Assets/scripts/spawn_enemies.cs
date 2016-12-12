@@ -39,18 +39,18 @@ public class spawn_enemies : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		if (Input.GetKeyDown (KeyCode.Alpha1)) {
-			spawn (one_two, four_one, whitePrefab, 180f);
-		}
-		if (Input.GetKeyDown (KeyCode.Alpha2)) {
-			spawn (two_three, one_two, yellowPrefab, 90f);
-		}
-		if (Input.GetKeyDown (KeyCode.Alpha3)) {
-			spawn (three_four, two_three, blackPrefab, 0f);
-		}
-		if (Input.GetKeyDown (KeyCode.Alpha4)) {
-			spawn (four_one, three_four, redPrefab, 270f);
-		}
+//		if (Input.GetKeyDown (KeyCode.Alpha1)) {
+//			spawn (one_two, four_one, whitePrefab, 180f);
+//		}
+//		if (Input.GetKeyDown (KeyCode.Alpha2)) {
+//			spawn (two_three, one_two, yellowPrefab, 90f);
+//		}
+//		if (Input.GetKeyDown (KeyCode.Alpha3)) {
+//			spawn (three_four, two_three, blackPrefab, 0f);
+//		}
+//		if (Input.GetKeyDown (KeyCode.Alpha4)) {
+//			spawn (four_one, three_four, redPrefab, 270f);
+//		}
 	}
 
 	void spawn (Transform left, Transform right, GameObject prefab, float rotation) {

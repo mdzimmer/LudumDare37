@@ -17,9 +17,9 @@ public class LivesCount : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		if (Input.GetKeyDown (KeyCode.Alpha8)) {
-			showNumber (0);
-		}
+//		if (Input.GetKeyDown (KeyCode.Alpha8)) {
+//			showNumber (0);
+//		}
 	}
 
 	public void showNumber(int number) {
