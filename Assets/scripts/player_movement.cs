@@ -86,8 +86,8 @@ public class player_movement : MonoBehaviour {
 		if (Input.GetKey (KeyCode.S)) {
 			rb.AddForce (new Vector2 (0f, -downForce));
 		}
-		bool leftClick = Input.GetMouseButtonDown (0);
-		bool rightClick = Input.GetMouseButtonDown (1);
+		bool leftClick = Input.GetMouseButtonDown (0) || Input.GetKeyDown(KeyCode.LeftArrow);
+		bool rightClick = Input.GetMouseButtonDown (1) || Input.GetKeyDown(KeyCode.RightArrow);
 		if (rightClick && !leftClick) {
 			punch (true);
 		} else if (leftClick && !rightClick) {
